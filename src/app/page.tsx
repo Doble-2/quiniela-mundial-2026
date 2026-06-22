@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { MatchData, Prediction, PlayerData, MatchResult, ResultsMap } from '@/lib/types';
 import { ALL_MATCHES } from '@/lib/matches';
@@ -721,7 +721,517 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {/* ── Simulador Floating Widget ── */}
+      <SimuladorWidget
+        players={players}
+        results={results}
+        allMatches={ALL_MATCHES}
+        calculateScores={calculateScores}
+      />
     </div>
+  );
+}
+
+// ── SimuladorWidget Component ─────────────────────────────────────────────────
+
+function SimuladorWidget({
+  players,
+  results,
+  allMatches,
+  calculateScores,
+}: {
+  players: PlayerData[];
+  results: ResultsMap;
+  allMatches: MatchData[];
+  calculateScores: (players: PlayerData[], results: ResultsMap) => PlayerWithScore[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [simResults, setSimResults] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
+  const [inputValues, setInputValues] = useState<Record<string, { home: string; away: string }>>({});
+  const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+
+  const unplayedMatches = useMemo(() => {
+    return allMatches.filter((m) => {
+      const res = results[m.matchId];
+      return !res?.played;
+    });
+  }, [allMatches, results]);
+
+  // Group unplayed matches by matchday (round)
+  const matchesByRound = useMemo(() => {
+    const groups: Record<string, MatchData[]> = {};
+    // Determine rounds: group stage rounds 1,2,3; use "Otras fases" for knockouts
+    for (const m of unplayedMatches) {
+      let label: string;
+      if (m.stage === 'group' && m.round) {
+        const roundLabels: Record<number, string> = { 1: 'Jornada 1', 2: 'Jornada 2', 3: 'Jornada 3' };
+        label = roundLabels[m.round] || `Ronda ${m.round}`;
+      } else {
+        const stageLabels: Record<string, string> = {
+          round16: 'Octavos de final',
+          quarter: 'Cuartos de final',
+          semi: 'Semifinales',
+          third: 'Tercer lugar',
+          final: 'Final',
+        };
+        label = stageLabels[m.stage] || m.stage;
+      }
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(m);
+    }
+    // Order group rounds first, then knockouts
+    const order = ['Jornada 1', 'Jornada 2', 'Jornada 3', 'Octavos de final', 'Cuartos de final', 'Semifinales', 'Tercer lugar', 'Final'];
+    const sorted = order.filter((k) => groups[k]).map((k) => ({ label: k, matches: groups[k] }));
+    // Add any labels not in the standard order
+    for (const k of Object.keys(groups)) {
+      if (!order.includes(k)) {
+        sorted.push({ label: k, matches: groups[k] });
+      }
+    }
+    return sorted;
+  }, [unplayedMatches]);
+
+  // Build simulated results map (real results + simulated scores)
+  const simResultMap: ResultsMap = useMemo(() => {
+    if (Object.keys(simResults).length === 0) return results;
+    const copy: ResultsMap = { ...results };
+    for (const [matchId, score] of Object.entries(simResults)) {
+      copy[matchId] = {
+        homeScore: score.homeScore,
+        awayScore: score.awayScore,
+        played: true,
+      };
+    }
+    return copy;
+  }, [results, simResults]);
+
+  // Calculate current positions for comparison
+  const realSorted = useMemo(() => calculateScores(players, results), [calculateScores, players, results]);
+  const simSorted = useMemo(() => calculateScores(players, simResultMap), [calculateScores, players, simResultMap]);
+
+  // Compute position changes: name -> { oldPos, newPos, pointsDiff }
+  const positionChanges = useMemo(() => {
+    const changes: Record<string, { oldPos: number; newPos: number; ptsDiff: number }> = {};
+    for (let i = 0; i < realSorted.length; i++) {
+      const p = realSorted[i];
+      const simIdx = simSorted.findIndex((s) => s.name === p.name);
+      const simPts = simIdx >= 0 ? simSorted[simIdx].points : p.points;
+      changes[p.name] = {
+        oldPos: i,
+        newPos: simIdx >= 0 ? simIdx : i,
+        ptsDiff: simPts - p.points,
+      };
+    }
+    return changes;
+  }, [realSorted, simSorted]);
+
+  const hasSimulation = Object.keys(simResults).length > 0;
+
+  const handleApplyScore = (matchId: string) => {
+    const vals = inputValues[matchId];
+    if (!vals) return;
+    const home = parseInt(vals.home, 10);
+    const away = parseInt(vals.away, 10);
+    if (isNaN(home) || isNaN(away)) return;
+    setSimResults((prev) => ({
+      ...prev,
+      [matchId]: { homeScore: home, awayScore: away },
+    }));
+    setActiveMatchId(null);
+  };
+
+  const handleRemoveSim = (matchId: string) => {
+    setSimResults((prev) => {
+      const next = { ...prev };
+      delete next[matchId];
+      return next;
+    });
+    setInputValues((prev) => {
+      const next = { ...prev };
+      delete next[matchId];
+      return next;
+    });
+  };
+
+  const clearAllSimulations = () => {
+    setSimResults({});
+    setInputValues({});
+    setActiveMatchId(null);
+  };
+
+  // ── Render ──
+
+  return (
+    <>
+      {/* Floating Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl
+                   bg-white/10 backdrop-blur-xl border border-white/15
+                   shadow-lg shadow-black/20 hover:shadow-amber-500/10
+                   hover:bg-white/15 hover:border-amber-500/30
+                   transition-all duration-300 group"
+        aria-label={isOpen ? 'Cerrar simulador' : 'Abrir simulador'}
+      >
+        <span className="text-lg">🧪</span>
+        <span className="text-sm font-semibold text-gray-200 group-hover:text-amber-300 transition-colors">
+          Simular
+        </span>
+        {unplayedMatches.length > 0 && (
+          <span className="bg-amber-500/20 text-amber-300 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-500/30">
+            {unplayedMatches.length}
+          </span>
+        )}
+        {/* Chevron indicator */}
+        <svg
+          className={`w-4 h-4 text-gray-500 transition-transform duration-300 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Overlay (click to close on mobile) */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:pointer-events-none"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Simulator Panel */}
+      <div
+        className={`fixed z-50 transition-all duration-500 ease-out
+          md:top-4 md:bottom-4 md:right-4 md:w-[480px] md:max-w-[90vw] md:rounded-2xl
+          bottom-0 left-0 right-0 max-h-[85vh] rounded-t-2xl
+          bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/40
+          overflow-hidden
+          ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full md:translate-y-8 md:translate-x-8 opacity-0 pointer-events-none'}
+        `}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">🧪</span>
+            <h3 className="text-lg font-bold text-gray-100">Simulador</h3>
+            <span className="text-xs text-gray-500 bg-white/[0.04] px-2 py-0.5 rounded-full">
+              {unplayedMatches.length} pendientes
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {hasSimulation && (
+              <button
+                onClick={clearAllSimulations}
+                className="text-xs px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors"
+              >
+                Limpiar todo
+              </button>
+            )}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.08] transition-colors text-gray-500 hover:text-gray-300"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Simulation status banner */}
+        {hasSimulation && (
+          <div className="mx-5 mt-3 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-amber-400">⚡</span>
+              <span className="text-amber-300 font-medium">
+                Simulación activa ({Object.keys(simResults).length} partido{Object.keys(simResults).length !== 1 ? 's' : ''})
+              </span>
+            </div>
+            <button
+              onClick={clearAllSimulations}
+              className="text-xs px-2.5 py-1 rounded-lg bg-white/[0.06] text-gray-400 hover:text-red-400 hover:bg-red-500/15 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Position changes banner (visible when simulation active) */}
+        {hasSimulation && (
+          <div className="mx-5 mt-2 px-4 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+            <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">
+              Cambios en la tabla
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 text-xs max-h-32 overflow-y-auto">
+              {simSorted.map((p, idx) => {
+                const change = positionChanges[p.name];
+                if (!change) return null;
+                const posDiff = change.oldPos - change.newPos; // positive = gained positions
+                const ptsDiff = change.ptsDiff;
+                if (posDiff === 0 && ptsDiff === 0) return null;
+                return (
+                  <div
+                    key={p.name}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-lg ${
+                      posDiff > 0
+                        ? 'bg-emerald-500/10 text-emerald-300'
+                        : posDiff < 0
+                        ? 'bg-red-500/10 text-red-300'
+                        : ptsDiff > 0
+                        ? 'bg-emerald-500/10 text-emerald-300'
+                        : 'bg-gray-500/10 text-gray-400'
+                    }`}
+                  >
+                    <span className="font-medium truncate max-w-[90px]">{p.name}</span>
+                    {posDiff !== 0 && (
+                      <span className="font-bold">
+                        {posDiff > 0 ? `↑${posDiff}` : `↓${Math.abs(posDiff)}`}
+                      </span>
+                    )}
+                    {ptsDiff !== 0 && (
+                      <span className="text-[10px] opacity-75">
+                        ({ptsDiff > 0 ? '+' : ''}{ptsDiff}pts)
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Tabla comparativa when simulation active */}
+        {hasSimulation && (
+          <div className="mx-5 mt-3 rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+            <div className="px-4 py-2 text-xs text-gray-500 font-medium uppercase tracking-wider border-b border-white/[0.05]">
+              Comparativa de posiciones
+            </div>
+            <div className="max-h-48 overflow-y-auto divide-y divide-white/[0.04]">
+              {simSorted.map((p, idx) => {
+                const change = positionChanges[p.name];
+                const posDiff = change ? change.oldPos - change.newPos : 0;
+                return (
+                  <div
+                    key={p.name}
+                    className={`grid grid-cols-[24px_1fr_40px_40px_40px] gap-1 items-center px-3 py-1.5 text-xs transition-colors ${
+                      posDiff > 0
+                        ? 'bg-emerald-500/8'
+                        : posDiff < 0
+                        ? 'bg-red-500/8'
+                        : ''
+                    }`}
+                  >
+                    <span className={`font-bold ${
+                      posDiff > 0 ? 'text-emerald-400' : posDiff < 0 ? 'text-red-400' : 'text-gray-500'
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    <span className="text-gray-300 truncate">{p.name}</span>
+                    <span className="text-amber-400 font-bold text-center">{p.points}</span>
+                    <span className="text-gray-500 text-center">
+                      {change && posDiff !== 0 ? (
+                        <span className={posDiff > 0 ? 'text-emerald-400' : 'text-red-400'}>
+                          {posDiff > 0 ? `↑${posDiff}` : `↓${Math.abs(posDiff)}`}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </span>
+                    <span className="text-gray-600 text-center font-mono text-[10px]">
+                      {change && change.ptsDiff !== 0 ? (
+                        <span className={change.ptsDiff > 0 ? 'text-emerald-400' : 'text-red-400'}>
+                          {change.ptsDiff > 0 ? '+' : ''}{change.ptsDiff}
+                        </span>
+                      ) : (
+                        ''
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Scrollable matches list */}
+        <div className="flex-1 overflow-y-auto px-5 pb-5 pt-3">
+          {matchesByRound.length === 0 ? (
+            <div className="text-center py-8">
+              <span className="text-3xl block mb-2">✅</span>
+              <p className="text-gray-500 text-sm">Todos los partidos tienen resultado</p>
+              <p className="text-gray-600 text-xs mt-1">No hay partidos pendientes para simular</p>
+            </div>
+          ) : (
+            matchesByRound.map(({ label, matches }) => (
+              <div key={label} className="mb-4 last:mb-0">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 pl-1">
+                  {label}
+                  <span className="text-gray-600 font-normal ml-1">({matches.length})</span>
+                </h4>
+                <div className="space-y-2">
+                  {matches.map((match) => {
+                    const hasSim = simResults[match.matchId] !== undefined;
+                    const simScore = simResults[match.matchId];
+                    const isActive = activeMatchId === match.matchId;
+                    const vals = inputValues[match.matchId] || { home: '', away: '' };
+
+                    return (
+                      <div
+                        key={match.matchId}
+                        className={`rounded-xl border transition-all duration-200 ${
+                          hasSim
+                            ? 'bg-amber-500/8 border-amber-500/25'
+                            : isActive
+                            ? 'bg-white/[0.06] border-white/20'
+                            : 'bg-white/[0.02] border-white/[0.06] hover:border-white/15'
+                        }`}
+                      >
+                        {/* Match row */}
+                        <div className="px-3 py-2.5">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
+                            <span>{match.date}</span>
+                            <span className="text-gray-600">·</span>
+                            <span>{match.time}</span>
+                            {match.group && (
+                              <>
+                                <span className="text-gray-600">·</span>
+                                <span className="text-amber-500/60 font-medium">Grupo {match.group}</span>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Home team */}
+                            <span className="flex-1 text-right text-sm text-gray-300 truncate">
+                              {match.home}
+                            </span>
+
+                            {/* Score inputs or display */}
+                            {hasSim ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500/15 text-amber-300 font-bold text-sm">
+                                  {simScore.homeScore}
+                                </span>
+                                <span className="text-gray-500 font-bold text-xs">:</span>
+                                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500/15 text-amber-300 font-bold text-sm">
+                                  {simScore.awayScore}
+                                </span>
+                                <button
+                                  onClick={() => handleRemoveSim(match.matchId)}
+                                  className="ml-1 w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-colors"
+                                  title="Quitar simulación"
+                                >
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : isActive ? (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="20"
+                                  value={vals.home}
+                                  onChange={(e) =>
+                                    setInputValues((prev) => ({
+                                      ...prev,
+                                      [match.matchId]: { ...prev[match.matchId], home: e.target.value },
+                                    }))
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleApplyScore(match.matchId);
+                                    if (e.key === 'Escape') setActiveMatchId(null);
+                                  }}
+                                  className="w-10 h-8 text-center rounded-lg bg-white/[0.06] border border-white/15 text-gray-200 text-sm font-bold
+                                            focus:outline-none focus:border-amber-500/50 focus:bg-amber-500/5 transition-all
+                                            [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  placeholder="0"
+                                  autoFocus
+                                />
+                                <span className="text-gray-500 font-bold text-xs">:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="20"
+                                  value={vals.away}
+                                  onChange={(e) =>
+                                    setInputValues((prev) => ({
+                                      ...prev,
+                                      [match.matchId]: { ...prev[match.matchId], away: e.target.value },
+                                    }))
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleApplyScore(match.matchId);
+                                    if (e.key === 'Escape') setActiveMatchId(null);
+                                  }}
+                                  className="w-10 h-8 text-center rounded-lg bg-white/[0.06] border border-white/15 text-gray-200 text-sm font-bold
+                                            focus:outline-none focus:border-amber-500/50 focus:bg-amber-500/5 transition-all
+                                            [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  placeholder="0"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.04] text-gray-500 text-sm font-mono">
+                                  ?
+                                </span>
+                                <span className="text-gray-600 font-bold text-xs">:</span>
+                                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.04] text-gray-500 text-sm font-mono">
+                                  ?
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Away team */}
+                            <span className="flex-1 text-left text-sm text-gray-300 truncate">
+                              {match.away}
+                            </span>
+                          </div>
+
+                          {/* Action buttons */}
+                          {!hasSim && (
+                            <div className="flex justify-end mt-1.5">
+                              {isActive ? (
+                                <div className="flex gap-1.5">
+                                  <button
+                                    onClick={() => handleApplyScore(match.matchId)}
+                                    className="text-xs px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/25 hover:bg-amber-500/30 transition-colors font-medium"
+                                  >
+                                    Aplicar
+                                  </button>
+                                  <button
+                                    onClick={() => setActiveMatchId(null)}
+                                    className="text-xs px-2.5 py-1 rounded-lg bg-white/[0.06] text-gray-400 hover:text-gray-300 hover:bg-white/[0.1] transition-colors"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setActiveMatchId(match.matchId)}
+                                  className="text-xs px-2.5 py-1 rounded-lg bg-white/[0.04] text-gray-400 border border-white/[0.06]
+                                             hover:bg-amber-500/10 hover:text-amber-400 hover:border-amber-500/20 transition-all"
+                                >
+                                  + Simular
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
