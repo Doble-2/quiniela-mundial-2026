@@ -169,13 +169,6 @@ export default function Home() {
     });
   }, []);
 
-  const clearAllResults = useCallback(() => {
-    if (confirm('¿Borrar todos los resultados?')) {
-      setResults({});
-      saveAllResults({ matchResults: {}, groupWinners: {}, knockoutResults: {} });
-    }
-  }, []);
-
   const sortedPlayers = calculateScores(players, results);
   const groupedMatches = getGroupedMatches();
 
@@ -262,12 +255,7 @@ export default function Home() {
                   )}
                 </div>
               )}
-              <button
-                onClick={clearAllResults}
-                className="px-4 py-2 bg-red-800 rounded-lg hover:bg-red-700 text-sm"
-              >
-                Borrar todos los resultados
-              </button>
+
               {isAuthenticated && (
                 <button
                   onClick={() => { setIsAuthenticated(false); setShowResultsForm(false); }}
