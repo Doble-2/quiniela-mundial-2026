@@ -456,6 +456,7 @@ export default function Home() {
             /* ── Leaderboard Table ── */
             <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden backdrop-blur-sm">
               {/* Table Header */}
+              {/* Desktop Header */}
               <div className="hidden md:grid grid-cols-[48px_1fr_70px_70px_70px_70px_55px] gap-2 px-5 py-3 border-b border-white/[0.06] text-xs uppercase tracking-wider text-gray-500 font-semibold">
                 <span>#</span>
                 <span>Jugador</span>
@@ -472,27 +473,23 @@ export default function Home() {
                     {/* Player Row */}
                     <button
                       onClick={() => setExpandedPlayer(expandedPlayer === player.name ? null : player.name)}
-                      className="w-full grid grid-cols-[40px_1fr_55px_50px_50px_50px_40px] md:grid-cols-[48px_1fr_70px_70px_70px_70px_55px] gap-2 items-center px-4 md:px-5 py-3.5 hover:bg-white/[0.04] transition-all text-left group"
+                      className="w-full grid grid-cols-[32px_1fr_45px_36px_36px] md:grid-cols-[48px_1fr_70px_70px_70px_70px_55px] gap-1 md:gap-2 items-center px-2 md:px-5 py-3 hover:bg-white/[0.04] transition-all text-left group"
                     >
                       {/* Position */}
                       <div className="flex items-center justify-center">
                         <PositionBadge pos={idx} />
                       </div>
 
-                      {/* Name */}
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium text-gray-200 truncate group-hover:text-amber-300 transition-colors">
+                      {/* Name + expand indicator */}
+                      <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+                        <span className="font-medium text-gray-200 truncate group-hover:text-amber-300 transition-colors text-xs md:text-sm">
                           {player.name}
                         </span>
-                        {/* Expand indicator */}
                         <svg
-                          className={`w-3.5 h-3.5 text-gray-600 shrink-0 transition-transform duration-300 ${
+                          className={`w-3 h-3 text-gray-600 shrink-0 transition-transform duration-300 md:block ${
                             expandedPlayer === player.name ? 'rotate-180 text-amber-400/60' : ''
                           }`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
+                          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                         >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -502,27 +499,40 @@ export default function Home() {
                       <div className="text-center">
                         <AnimatedNumber
                           value={player.points}
-                          className="text-lg md:text-xl font-extrabold text-amber-400"
+                          className="text-sm md:text-xl font-extrabold text-amber-400"
                         />
+                        {/* Mobile mini stats row below points */}
+                        <div className="flex gap-0.5 justify-center text-[9px] md:hidden text-gray-500 mt-0.5">
+                          <span className="text-emerald-500/80">{player.exactResults}E</span>
+                          <span className="text-blue-400/80">{player.correctResults}A</span>
+                        </div>
                       </div>
 
-                      {/* Exact results */}
-                      <div className="text-center">
+                      {/* Mobile-only: accuracy % */}
+                      <div className="md:hidden text-center">
+                        <span className={`text-[10px] font-mono ${
+                          player.accuracy >= 60 ? 'text-amber-400' : player.accuracy >= 30 ? 'text-gray-400' : 'text-red-400'
+                        }`}>
+                          {player.accuracy}%
+                        </span>
+                      </div>
+
+                      {/* Mobile-only: total possible */}
+                      <div className="md:hidden text-center">
+                        <span className="text-[10px] text-gray-600">{player.totalPossible}</span>
+                      </div>
+
+                      {/* Desktop columns (hidden on mobile) */}
+                      <div className="hidden md:block text-center">
                         <span className="text-sm font-semibold text-emerald-400">{player.exactResults}</span>
                       </div>
-
-                      {/* Correct winners */}
-                      <div className="text-center">
+                      <div className="hidden md:block text-center">
                         <span className="text-sm font-semibold text-blue-400">{player.correctResults}</span>
                       </div>
-
-                      {/* Possible */}
-                      <div className="text-center">
+                      <div className="hidden md:block text-center">
                         <span className="text-sm text-gray-500">{player.totalPossible}</span>
                       </div>
-
-                      {/* Accuracy % */}
-                      <div className="text-center">
+                      <div className="hidden md:block text-center">
                         <span className={`text-sm font-mono ${
                           player.accuracy >= 60 ? 'text-amber-400' : player.accuracy >= 30 ? 'text-gray-400' : 'text-red-400'
                         }`}>
@@ -545,31 +555,71 @@ export default function Home() {
           )}
         </section>
 
-        {/* ── Bottom 3 funny messages ── */}
+                {/* ── Bottom 3 funny messages (dynamic pool of 40+) ── */}
         {!loading && sortedPlayers.length >= 3 && (
           <div className="mt-6 space-y-2 text-center">
-            <p className="text-xs text-gray-600 mb-2">🏆 Mensajes para la cola de la tabla:</p>
+            <p className="text-xs text-gray-600 mb-2 text-center">🏆 Mensajes para la cola de la tabla:</p>
             {(() => {
-              const msgs = [
-                ['🧠', 'Hiciste pronósticos o solo le pegaste al teclado?'],
+              const pool = [
+                ['🧠', 'Hiciste pron\u00f3sticos o solo le pegaste al teclado?'],
                 ['🔮', 'La bola de cristal est\u00e1 en mantenimiento.'],
-                ['\u{1F4C9}', 'Las acciones suben, tus aciertos bajan. Impresionante.']
+                ['📉', 'Las acciones suben, tus aciertos bajan. Impresionante.'],
+                ['🎯', 'Experto en fallar: especialidad de la casa.'],
+                ['🐢', 'Vas lento pero seguro... seguro al \u00faltimo lugar.'],
+                ['🦥', 'Tu velocidad de acierto es similar a la de un perezoso.'],
+                ['🎪', 'Eres el payaso de la quiniela? Porque esto es un circo.'],
+                ['🔍', 'Buscando aciertos como si fueran WMD en Irak.'],
+                ['📊', 'Tus estad\u00edsticas: 99% de fe, 1% de acierto.'],
+                ['🎲', 'Tiraste un dado para cada resultado, verdad?'],
+                ['🥉', 'Bronce en la categor\u00eda \u0022al menos lo intentaste\u0022'],
+                ['🔋', 'Se te acab\u00f3 la bater\u00eda despu\u00e9s de acertar UN partido.'],
+                ['🎭', 'No eres adivino, eres comediante.'],
+                ['⚽', 'Viste alg\u00fan partido o solo pusiste resultados al azar?'],
+                ['📚', 'Deber\u00edas leer menos libros de autoayuda y m\u00e1s deportes.'],
+                ['🎰', 'Tu estrategia es igual a una tragamonedas.'],
+                ['🌧\uFE0F', 'Tus predicciones tienen menos sol que un d\u00eda lluvioso.'],
+                ['🧩', 'Te falta una pieza... la que tiene los resultados correctos.'],
+                ['🎬', 'Tus pron\u00f3sticos dan miedo... y no es una pel\u00edcula.'],
+                ['🥴', 'Le atinaste a todo... todo mal, pero todo.'],
+                ['🌀', 'Tus aciertos est\u00e1n en otro plano dimensional.'],
+                ['🪄', 'Abracadabra... tus puntos desaparecieron.'],
+                ['🧮', 'Hasta calculando mal le pegas m\u00e1s que ahora.'],
+                ['🎤', 'Suelta el micr\u00f3fono, suelta la quiniela.'],
+                ['📦', 'Tus aciertos nunca llegaron. Sin seguimiento, sin rastro.'],
+                ['🚂', 'Descarrilaste desde el primer partido.'],
+                ['⚡', 'La \u00fanica corriente que tienes es la que te corre al ver la tabla.'],
+                ['🧪', 'Tus pron\u00f3sticos son experimentalmente incorrectos.'],
+                ['🎮', 'Ponle easy, esto es modo legendario para ti.'],
+                ['🌡\uFE0F', 'Tus aciertos est\u00e1n bajo cero.'],
+                ['🚀', 'Despegas... directo al \u00faltimo puesto.'],
+                ['📡', 'Buscando se\u00f1al de acierto... sin \u00e9xito.'],
+                ['🐌', 'Tu paso en la tabla es m\u00e1s lento que una caracola.'],
+                ['🧊', 'Tus puntos est\u00e1n congelados desde la primera jornada.'],
+                ['🎨', 'Pintaste la quiniela de colores... l\u00e1stima que todos son rojos.'],
+                ['🕳\uFE0F', 'Cavaste un hoyo y te quedaste en el fondo de la tabla.'],
+                ['🤷', 'Nobody knows. Y t\u00fa menos.'],
+                ['🥇', 'Primero... empezando por abajo.'],
+                ['🧭', 'Perdiste el rumbo en el partido inaugural.'],
+                ['🎠', 'Esto no es un carrusel pero das vueltas en el mismo puesto.']
               ];
-              return msgs.map(([emoji, msg], i) => {
+              const shuffled = [...pool].sort(() => Math.random() - 0.5);
+              return [0, 1, 2].map(i => {
                 const player = sortedPlayers[sortedPlayers.length - 1 - i];
                 if (!player) return null;
+                const [emoji, msg] = shuffled[i];
                 return (
-                  <div key={i} className="flex items-center gap-2 text-sm text-gray-500 justify-center italic">
+                  <div key={i} className="flex items-center gap-1.5 text-xs md:text-sm text-gray-500 justify-center italic flex-wrap px-2">
                     <span>{emoji}</span>
                     <span className="font-medium text-gray-400">{player.name}:</span>
-                    <span>"{msg}"</span>
-                    <span className="text-xs text-gray-600">({player.points}pts, {player.accuracy}%)</span>
+                    <span className="text-gray-500">\u0022{msg}\u0022</span>
+                    <span className="text-[10px] md:text-xs text-gray-600">({player.points}pts, {player.accuracy}%)</span>
                   </div>
                 );
               });
             })()}
           </div>
         )}
+
 
         {/* ── Key ── */}
         {!loading && sortedPlayers.length > 0 && (
