@@ -7,16 +7,10 @@ import { ALL_MATCHES } from '@/lib/matches';
 import { calculatePredictionPoints, getAllResults, saveAllResults } from '@/lib/scoring';
 import { PerformanceChart, CHART_COLORS } from '@/lib/charts';
 import { PLAYER_SLUG_MAP } from '@/lib/utils';
+import { PositionSparkline, calculatePositionTrends, getPredictionMatchId, PlayerWithScore } from '@/lib/position-trends';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function getPredictionMatchId(pred: Prediction): string | null {
-  const parts = pred.match.split('-');
-  if (parts.length !== 2) return null;
-  const [home, away] = parts;
-  const match = ALL_MATCHES.find(m => m.home === home && m.away === away);
-  return match ? match.matchId : null;
-}
 
 // ── Per-Matchday Points Calculation ───────────────────────────────────────────
 
@@ -89,15 +83,6 @@ function groupPredictions(predictions: Prediction[]): Map<string, Prediction[]> 
   return grouped;
 }
 
-interface PlayerWithScore {
-  name: string;
-  points: number;
-  exactResults: number;
-  correctResults: number;
-  totalPossible: number;
-  accuracy: number;
-  predictions: Prediction[];
-}
 
 function calculateScores(players: PlayerData[], results: ResultsMap): PlayerWithScore[] {
   return players.map(player => {
@@ -176,104 +161,6 @@ function PositionBadge({ pos }: { pos: number }) {
   return <span className="text-sm font-bold text-gray-500 w-6 inline-block text-center">{pos + 1}</span>;
 }
 
-// ── Position Trend Sparkline ───────────────────────────────────────────────────
-
-function PositionSparkline({ positions }: { positions: number[] }) {
-  if (!positions || positions.length < 2) return null;
-  const w = 36;
-  const h = 16;
-  const max = Math.max(...positions);
-  const min = Math.min(...positions);
-  const range = Math.max(max - min, 1);
-  const pad = 2;
-  const plotH = h - pad * 2;
-  
-  const points = positions.map((pos, i) => {
-    const x = (i / (positions.length - 1)) * (w - pad * 2) + pad;
-    const y = ((pos - min) / range) * plotH + pad;
-    return `${x},${y}`;
-  }).join(' ');
-  
-  const first = positions[0];
-  const last = positions[positions.length - 1];
-  const improving = last < first;
-  const declining = last > first;
-  const color = improving ? '#10b981' : declining ? '#ef4444' : '#6b7280';
-  
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0 opacity-70"
-        aria-label={`Puestos: ${positions.join(' → ')}`}>
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx={w - pad} cy={((last - min) / range) * plotH + pad} r="1.5" fill={color} />
-    </svg>
-  );
-}
-
-function calculatePositionTrends(
-  results: ResultsMap,
-  sortedPlayers: PlayerWithScore[]
-): Record<string, number[]> {
-  const trends: Record<string, number[]> = {};
-  for (const player of sortedPlayers) {
-    trends[player.name] = [];
-  }
-  
-  // Get played matches sorted chronologically by match date
-  const playedMatches = ALL_MATCHES
-    .filter(m => m.stage === 'group' && results[m.matchId]?.played)
-    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
-  
-  if (playedMatches.length < 2) return trends;
-  
-  // For each player, pre-compute points per matchId for quick lookup
-  const playerPoints: Record<string, Record<string, number>> = {};
-  for (const player of sortedPlayers) {
-    playerPoints[player.name] = {};
-    for (const pred of player.predictions) {
-      const matchId = getPredictionMatchId(pred);
-      if (!matchId) continue;
-      const r = results[matchId];
-      if (!r?.played || !pred?.score) continue;
-      const actualScore = `${r.homeScore}-${r.awayScore}`;
-      playerPoints[player.name][matchId] = calculatePredictionPoints(pred.score, actualScore);
-    }
-  }
-  
-  // After each match, compute cumulative positions
-  const cumulative: Record<string, number> = {};
-  for (const player of sortedPlayers) {
-    cumulative[player.name] = 0;
-  }
-  
-  for (let mi = 0; mi < playedMatches.length; mi++) {
-    const matchId = playedMatches[mi].matchId;
-    
-    // Add points for this match
-    for (const player of sortedPlayers) {
-      cumulative[player.name] += playerPoints[player.name]?.[matchId] || 0;
-    }
-    
-    // Compute rankings at this point
-    // Only record every 5th match + first + last to keep sparkline readable
-    if (mi === 0 || mi === playedMatches.length - 1 || mi % 5 === 0) {
-      const ranked = [...sortedPlayers].sort((a, b) => (cumulative[b.name] || 0) - (cumulative[a.name] || 0));
-      for (let ri = 0; ri < ranked.length; ri++) {
-        const name = ranked[ri].name;
-        if (!trends[name]) trends[name] = [];
-        trends[name].push(ri);
-      }
-    }
-  }
-  
-  return trends;
-}
 
 // ── Skeleton Loader ───────────────────────────────────────────────────────────
 

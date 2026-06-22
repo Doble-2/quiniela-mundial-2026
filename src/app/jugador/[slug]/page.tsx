@@ -8,6 +8,7 @@ import { ALL_MATCHES } from "@/lib/matches";
 import { calculatePredictionPoints } from "@/lib/scoring";
 import { PerformanceChart, CHART_COLORS } from "@/lib/charts";
 import { SLUG_TO_NAME } from "@/lib/utils";
+import { PositionSparkline } from "@/lib/position-trends";
 
 function getMatchIdByTeams(home: string, away: string): string | null {
   const match = ALL_MATCHES.find((m) => m.home === home && m.away === away);
@@ -31,12 +32,13 @@ export default function PlayerDetailPage() {
   const [player, setPlayer] = useState<PlayerData | null>(null);
   const [results, setResults] = useState<ResultsMap>({});
   const [loading, setLoading] = useState(true);
+  const [positionTrends, setPositionTrends] = useState<Record<string, number[]>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const [playerData, resultsData] = await Promise.all([
+        const [playerData, resultsData, trendsData] = await Promise.all([
           fetch(`/data/${slug}.json`).then((r) => {
             if (!r.ok) throw new Error("Jugador no encontrado");
             return r.json() as Promise<PlayerData>;
@@ -45,9 +47,14 @@ export default function PlayerDetailPage() {
             .then((r) => r.json())
             .then((d) => d.matchResults as ResultsMap)
             .catch(() => ({}) as ResultsMap),
+          fetch("/api/position-trends")
+            .then((r) => r.json())
+            .then((d) => d.trends as Record<string, number[]>)
+            .catch(() => ({}) as Record<string, number[]>),
         ]);
         setPlayer(playerData);
         setResults(resultsData);
+        setPositionTrends(trendsData);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Error al cargar datos");
       }
@@ -210,9 +217,16 @@ export default function PlayerDetailPage() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
               {player.nombre}
             </h1>
-            <p className="text-gray-400 text-sm mt-0.5">
-              {playerStats?.points || 0} puntos • {playerStats?.accuracy || 0}% precisión
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-gray-400 text-sm">
+                {playerStats?.points || 0} puntos • {playerStats?.accuracy || 0}% precisión
+              </span>
+              <PositionSparkline
+                positions={positionTrends[player.nombre] || []}
+                size="sm"
+                showLabel
+              />
+            </div>
           </div>
         </div>
 
@@ -262,6 +276,22 @@ export default function PlayerDetailPage() {
               height={200}
               width={600}
               cumulative={true}
+            />
+          </div>
+        )}
+
+        {/* Position history chart */}
+        {positionTrends[player.nombre]?.length > 1 && (
+          <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 md:p-5 mb-8 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-medium text-gray-300 uppercase tracking-wider">
+                🏔 Evolución de posición
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-r from-white/5 to-transparent" />
+            </div>
+            <PositionSparkline
+              positions={positionTrends[player.nombre] || []}
+              size="lg"
             />
           </div>
         )}
