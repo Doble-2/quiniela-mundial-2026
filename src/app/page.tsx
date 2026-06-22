@@ -650,6 +650,71 @@ export default function Home() {
           </section>
         )}
 
+        {/* ── Non-cumulative points per matchday ── */}
+        {!loading && sortedPlayers.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
+              <h2 className="text-lg sm:text-xl font-bold text-gray-200 flex items-center gap-2">
+                📊 Puntos por jornada
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
+            </div>
+            <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-3 md:p-5 backdrop-blur-sm">
+              {(() => {
+                const top5 = sortedPlayers.slice(0, 5);
+                const mdPoints = calculatePerMatchdayPoints(top5, results);
+                const chartData = mdPoints.map((md) => ({
+                  label: md.matchday,
+                  values: md.points,
+                }));
+                return (
+                  <PerformanceChart
+                    data={chartData}
+                    players={top5.map((p) => p.name)}
+                    type="bar"
+                    height={220}
+                    width={600}
+                    cumulative={false}
+                  />
+                );
+              })()}
+            </div>
+          </section>
+        )}
+
+        {/* ── Accuracy % per player ── */}
+        {!loading && sortedPlayers.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+              <h2 className="text-lg sm:text-xl font-bold text-gray-200 flex items-center gap-2">
+                🎯 Precisión general
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+            </div>
+            <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-3 md:p-5 backdrop-blur-sm">
+              {(() => {
+                const top10 = sortedPlayers.slice(0, 10);
+                const accData = [{
+                  label: '% Acierto',
+                  values: Object.fromEntries(top10.map(p => [p.name, p.accuracy]))
+                }];
+                return (
+                  <PerformanceChart
+                    data={accData}
+                    players={top10.map((p) => p.name)}
+                    type="bar"
+                    height={220}
+                    width={600}
+                    cumulative={false}
+                  />
+                );
+              })()}
+            </div>
+          </section>
+        )}
+
         {/* ── Bottom 3 funny messages (dynamic pool of 40+) ── */}
         {!loading && sortedPlayers.length >= 3 && (
           <div className="mt-6 space-y-2 text-center">
