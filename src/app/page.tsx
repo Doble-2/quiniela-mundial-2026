@@ -750,6 +750,60 @@ function SimuladorWidget({
   const [simResults, setSimResults] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
   const [inputValues, setInputValues] = useState<Record<string, { home: string; away: string }>>({});
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+  const [matchVetTimes, setMatchVetTimes] = useState<Record<string, string>>({});
+
+  // Fetch match times from openfootball and convert to VET
+  useEffect(() => {
+    async function loadTimes() {
+      try {
+        const TEAM_MAP: Record<string, string> = {
+          "Mexico": "México", "South Africa": "Sudáfrica", "South Korea": "Corea del Sur",
+          "Czech Republic": "República Checa", "Canada": "Canadá", "Bosnia & Herzegovina": "Bosnia y Herzegovina",
+          "Qatar": "Catar", "Switzerland": "Suiza", "Brazil": "Brasil", "Morocco": "Marruecos",
+          "Haiti": "Haití", "Scotland": "Escocia", "USA": "Estados Unidos", "Paraguay": "Paraguay",
+          "Australia": "Australia", "Turkey": "Turquía", "Germany": "Alemania", "Curaçao": "Curazao",
+          "Ivory Coast": "Costa de Marfil", "Ecuador": "Ecuador", "Netherlands": "Países Bajos",
+          "Japan": "Japón", "Sweden": "Suecia", "Tunisia": "Túnez", "Belgium": "Bélgica",
+          "Egypt": "Egipto", "Iran": "Irán", "New Zealand": "Nueva Zelanda", "Spain": "España",
+          "Cape Verde": "Cabo Verde", "Saudi Arabia": "Arabia Saudita", "Uruguay": "Uruguay",
+          "France": "Francia", "Senegal": "Senegal", "Iraq": "Irak", "Norway": "Noruega",
+          "Argentina": "Argentina", "Algeria": "Argelia", "Austria": "Austria", "Jordan": "Jordania",
+          "Portugal": "Portugal", "DR Congo": "RD Congo", "Uzbekistan": "Uzbekistán",
+          "Colombia": "Colombia", "England": "Inglaterra", "Croatia": "Croacia",
+          "Ghana": "Ghana", "Panama": "Panamá"
+        };
+        const resp = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
+        const data = await resp.json();
+        const times: Record<string, string> = {};
+        if (data?.matches) {
+          for (const m of data.matches) {
+            const home = TEAM_MAP[m.team1] || m.team1;
+            const away = TEAM_MAP[m.team2] || m.team2;
+            const match = allMatches.find(x => x.home === home && x.away === away);
+            if (match && m.time) {
+              times[match.matchId] = convTime(m.time);
+            }
+          }
+        }
+        setMatchVetTimes(times);
+      } catch(e) {}
+    }
+    loadTimes();
+  }, [allMatches]);
+
+  function convTime(timeStr: string): string {
+    const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*UTC([+-])(\d{1,2})$/);
+    if (!match) return timeStr;
+    let h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const sign = match[3] === '+' ? 1 : -1;
+    const off = parseInt(match[4], 10) * sign;
+    let utcH = sign === -1 ? h + Math.abs(off) : h - off;
+    let vetH = utcH - 4;
+    if (vetH < 0) vetH += 24;
+    if (vetH >= 24) vetH -= 24;
+    return String(vetH).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ' VET';
+  }
 
   // Lock body scroll when panel is open
   useEffect(() => {
@@ -1104,7 +1158,7 @@ function SimuladorWidget({
                           <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
                             <span>{match.date}</span>
                             <span className="text-gray-600">·</span>
-                            <span>{match.time}</span>
+                            <span>{matchVetTimes[match.matchId] || match.time || '—'}</span>
                             {match.group && (
                               <>
                                 <span className="text-gray-600">·</span>
