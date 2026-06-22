@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { MatchData, Prediction, PlayerData, MatchResult, ResultsMap } from '@/lib/types';
 import { ALL_MATCHES } from '@/lib/matches';
 import { calculatePredictionPoints, getAllResults, saveAllResults } from '@/lib/scoring';
 import { PerformanceChart, CHART_COLORS } from '@/lib/charts';
+import { PLAYER_SLUG_MAP } from '@/lib/utils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -544,9 +546,13 @@ export default function Home() {
 
                       {/* Name + expand indicator */}
                       <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-                        <span className="font-medium text-gray-200 truncate group-hover:text-amber-300 transition-colors text-xs md:text-sm">
+                        <Link
+                          href={`/jugador/${PLAYER_SLUG_MAP[player.name] || player.name.toLowerCase()}`}
+                          className="font-medium text-gray-200 truncate group-hover:text-amber-300 transition-colors text-xs md:text-sm hover:text-amber-300"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {player.name}
-                        </span>
+                        </Link>
                         <svg
                           className={`w-3 h-3 text-gray-600 shrink-0 transition-transform duration-300 md:block ${
                             expandedPlayer === player.name ? 'rotate-180 text-amber-400/60' : ''
