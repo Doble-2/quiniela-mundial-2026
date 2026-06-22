@@ -751,6 +751,16 @@ function SimuladorWidget({
   const [inputValues, setInputValues] = useState<Record<string, { home: string; away: string }>>({});
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
 
+  // Lock body scroll when panel is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   const unplayedMatches = useMemo(() => {
     return allMatches.filter((m) => {
       const res = results[m.matchId];
@@ -906,9 +916,9 @@ function SimuladorWidget({
       <div
         className={`fixed z-50 transition-all duration-500 ease-out
           md:top-4 md:bottom-4 md:right-4 md:w-[480px] md:max-w-[90vw] md:rounded-2xl
-          bottom-0 left-0 right-0 max-h-[85vh] rounded-t-2xl
+          bottom-0 left-0 right-0 max-h-[90vh] md:max-h-none rounded-t-2xl
           bg-gray-900/95 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/40
-          overflow-hidden
+          flex flex-col
           ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full md:translate-y-8 md:translate-x-8 opacity-0 pointer-events-none'}
         `}
       >
@@ -1057,7 +1067,7 @@ function SimuladorWidget({
         )}
 
         {/* Scrollable matches list */}
-        <div className="flex-1 overflow-y-auto px-5 pb-5 pt-3">
+        <div className="flex-1 overflow-y-auto px-5 pb-5 pt-3 min-h-0">
           {matchesByRound.length === 0 ? (
             <div className="text-center py-8">
               <span className="text-3xl block mb-2">✅</span>
