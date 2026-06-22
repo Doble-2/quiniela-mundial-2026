@@ -207,43 +207,10 @@ export default function Home() {
       setLoading(true);
 
       async function fetchResults() {
-        const TEAM_MAP: Record<string, string> = {
-          "Mexico": "México", "South Africa": "Sudáfrica", "South Korea": "Corea del Sur",
-          "Czech Republic": "República Checa", "Canada": "Canadá", "Bosnia & Herzegovina": "Bosnia y Herzegovina",
-          "Qatar": "Catar", "Switzerland": "Suiza", "Brazil": "Brasil", "Morocco": "Marruecos",
-          "Haiti": "Haití", "Scotland": "Escocia", "USA": "Estados Unidos", "Paraguay": "Paraguay",
-          "Australia": "Australia", "Turkey": "Turquía", "Germany": "Alemania", "Curaçao": "Curazao",
-          "Ivory Coast": "Costa de Marfil", "Ecuador": "Ecuador", "Netherlands": "Países Bajos",
-          "Japan": "Japón", "Sweden": "Suecia", "Tunisia": "Túnez", "Belgium": "Bélgica",
-          "Egypt": "Egipto", "Iran": "Irán", "New Zealand": "Nueva Zelanda", "Spain": "España",
-          "Cape Verde": "Cabo Verde", "Saudi Arabia": "Arabia Saudita", "Uruguay": "Uruguay",
-          "France": "Francia", "Senegal": "Senegal", "Iraq": "Irak", "Norway": "Noruega",
-          "Argentina": "Argentina", "Algeria": "Argelia", "Austria": "Austria", "Jordan": "Jordania",
-          "Portugal": "Portugal", "DR Congo": "RD Congo", "Uzbekistan": "Uzbekistán",
-          "Colombia": "Colombia", "England": "Inglaterra", "Croatia": "Croacia",
-          "Ghana": "Ghana", "Panama": "Panamá"
-        };
-
         try {
-          const resp = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
-          const rawData = await resp.json();
-          const matchResults: ResultsMap = {};
-
-          if (rawData?.matches) {
-            for (const m of rawData.matches) {
-              if (!m.score?.ft) continue;
-              const home = TEAM_MAP[m.team1] || m.team1;
-              const away = TEAM_MAP[m.team2] || m.team2;
-              const matchEntry = ALL_MATCHES.find(x => x.home === home && x.away === away);
-              if (matchEntry) {
-                matchResults[matchEntry.matchId] = {
-                  homeScore: m.score.ft[0],
-                  awayScore: m.score.ft[1],
-                  played: true
-                };
-              }
-            }
-          }
+          const resp = await fetch('/api/live-results');
+          const data = await resp.json();
+          const matchResults: ResultsMap = data.matchResults || {}
 
           if (Object.keys(matchResults).length > 0) {
             setResults(matchResults);
@@ -772,7 +739,7 @@ function SimuladorWidget({
           "Colombia": "Colombia", "England": "Inglaterra", "Croatia": "Croacia",
           "Ghana": "Ghana", "Panama": "Panamá"
         };
-        const resp = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
+        const resp = await fetch('/api/live-results');
         const data = await resp.json();
         const times: Record<string, string> = {};
         if (data?.matches) {
