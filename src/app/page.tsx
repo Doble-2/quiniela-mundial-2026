@@ -176,6 +176,80 @@ function PositionBadge({ pos }: { pos: number }) {
   return <span className="text-sm font-bold text-gray-500 w-6 inline-block text-center">{pos + 1}</span>;
 }
 
+// ── Position Trend Sparkline ───────────────────────────────────────────────────
+
+function PositionSparkline({ positions }: { positions: number[] }) {
+  if (!positions || positions.length < 2) return null;
+  const w = 36;
+  const h = 16;
+  const max = Math.max(...positions);
+  const min = Math.min(...positions);
+  const range = Math.max(max - min, 1);
+  const pad = 2;
+  const plotH = h - pad * 2;
+  
+  const points = positions.map((pos, i) => {
+    const x = (i / (positions.length - 1)) * (w - pad * 2) + pad;
+    const y = ((pos - min) / range) * plotH + pad;
+    return `${x},${y}`;
+  }).join(' ');
+  
+  const first = positions[0];
+  const last = positions[positions.length - 1];
+  const improving = last < first;
+  const declining = last > first;
+  const color = improving ? '#10b981' : declining ? '#ef4444' : '#6b7280';
+  
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0 opacity-70"
+        aria-label={`Puestos: ${positions.join(' → ')}`}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx={w - pad} cy={((last - min) / range) * plotH + pad} r="1.5" fill={color} />
+    </svg>
+  );
+}
+
+function calculatePositionTrends(mdPoints: { matchday: string; points: Record<string, number> }[], sortedPlayers: PlayerWithScore[]): Record<string, number[]> {
+  const trends: Record<string, number[]> = {};
+  
+  for (const player of sortedPlayers) {
+    trends[player.name] = [];
+  }
+  
+  // For each matchday, compute rankings
+  for (let mi = 0; mi < mdPoints.length; mi++) {
+    const md = mdPoints[mi];
+    // Build cumulative points up to this matchday
+    const cumulative: Record<string, number> = {};
+    for (const player of sortedPlayers) {
+      let total = 0;
+      for (let j = 0; j <= mi; j++) {
+        total += mdPoints[j].points[player.name] || 0;
+      }
+      cumulative[player.name] = total;
+    }
+    
+    // Sort by cumulative points
+    const ranked = [...sortedPlayers].sort((a, b) => (cumulative[b.name] || 0) - (cumulative[a.name] || 0));
+    
+    // Assign positions (0-indexed)
+    for (let ri = 0; ri < ranked.length; ri++) {
+      const name = ranked[ri].name;
+      if (!trends[name]) trends[name] = [];
+      trends[name].push(ri);
+    }
+  }
+  
+  return trends;
+}
+
 // ── Skeleton Loader ───────────────────────────────────────────────────────────
 
 function SkeletonRow() {
@@ -270,6 +344,13 @@ export default function Home() {
   const totalPlayed = Object.values(results).filter(r => r.played).length;
   const totalGroupMatches = ALL_MATCHES.filter(m => m.stage === 'group').length;
 
+  // Calculate position trends per matchday for sparklines
+  const positionTrends = useMemo(() => {
+    if (players.length === 0 || Object.keys(results).length === 0) return {};
+    const mdPoints = calculatePerMatchdayPoints(sortedPlayers, results);
+    return calculatePositionTrends(mdPoints, sortedPlayers);
+  }, [players, results, sortedPlayers]);
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -361,6 +442,8 @@ export default function Home() {
                         >
                           {player.name}
                         </Link>
+                        {/* Position sparkline */}
+                        <PositionSparkline positions={positionTrends[player.name] || []} />
                         <svg
                           className={`w-3 h-3 text-gray-600 shrink-0 transition-transform duration-300 md:block ${
                             expandedPlayer === player.name ? 'rotate-180 text-amber-400/60' : ''
