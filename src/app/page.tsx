@@ -198,15 +198,7 @@ export default function Home() {
   const [results, setResults] = useState<ResultsMap>({});
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [newPasswordInput, setNewPasswordInput] = useState('');
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
-  const [resultsFromAPI, setResultsFromAPI] = useState(false);
 
   // ── Load Data ────────────────────────────────────────────────────────────────
 
@@ -256,7 +248,7 @@ export default function Home() {
           if (Object.keys(matchResults).length > 0) {
             setResults(matchResults);
             saveAllResults({ matchResults, groupWinners: {}, knockoutResults: {} });
-            setResultsFromAPI(true);
+            
             return;
           }
         } catch (e) {
@@ -315,176 +307,25 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 text-gray-100">
-      {/* Hero / Header */}
-      <header className="relative overflow-hidden">
-        {/* Decorative gradient blobs */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-500/5 rounded-full blur-3xl" />
-          <div className="absolute top-20 left-1/3 w-64 h-64 bg-amber-400/5 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Trophy icon */}
-              <div className="hidden sm:flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-amber-400/20 to-yellow-600/20 border border-amber-500/30 backdrop-blur-sm">
-                <span className="text-2xl">🏆</span>
-              </div>
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
-                  Quiniela Mundial 2026
-                </h1>
-                <p className="text-gray-400 mt-1 text-sm sm:text-base flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-amber-400/60" />
-                  {totalPlayed}/{totalGroupMatches} partidos disputados
-                  <span className="text-gray-600">·</span>
-                  <span className="text-gray-500">{players.length} jugadores</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Settings gear */}
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className={`relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-300 ${
-                showSettings
-                  ? 'border-amber-500/50 bg-amber-500/10 shadow-lg shadow-amber-500/10'
-                  : 'border-gray-700/50 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800/60'
-              }`}
-              title="Configuración"
-            >
-              <svg className={`w-5 h-5 transition-transform duration-500 ${showSettings ? 'rotate-90 text-amber-400' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-          </div>
-
-          {/* ── Settings Panel ────────────────────────────────────────────────── */}
-          {showSettings && (
-            <div className="mt-5 p-5 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl shadow-xl animate-fadeIn">
-              {!isAuthenticated ? (
-                /* ── Password Entry ── */
-                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                  <div className="relative flex-1 max-w-xs">
-                    <input
-                      type="password"
-                      placeholder="Clave de administrador"
-                      className="w-full px-4 py-2.5 bg-white/[0.06] border border-white/[0.1] rounded-xl text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all"
-                      value={passwordInput}
-                      onChange={e => { setPasswordInput(e.target.value); setPasswordError(false); }}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          if (passwordInput === adminPassword) {
-                            setIsAuthenticated(true);
-                            setPasswordInput('');
-                          } else if (passwordInput === 'Admin2026!') {
-                            setAdminPassword(passwordInput);
-                            setIsAuthenticated(true);
-                            setPasswordInput('');
-                          } else {
-                            setPasswordError(true);
-                          }
-                        }
-                      }}
-                    />
-                    {passwordError && (
-                      <p className="text-red-400 text-xs mt-1.5 ml-1">❌ Clave incorrecta</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (passwordInput === adminPassword) {
-                        setIsAuthenticated(true);
-                        setPasswordInput('');
-                      } else if (passwordInput === 'Admin2026!') {
-                        setAdminPassword(passwordInput);
-                        setIsAuthenticated(true);
-                        setPasswordInput('');
-                      } else {
-                        setPasswordError(true);
-                      }
-                    }}
-                    className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-950 font-semibold text-sm rounded-xl hover:from-amber-400 hover:to-yellow-400 transition-all shadow-lg shadow-amber-500/20"
-                  >
-                    Acceder
-                  </button>
-                </div>
-              ) : (
-                /* ── Authenticated Panel ── */
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-green-400">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Sesión iniciada como administrador
-                    </div>
-                    <button
-                      onClick={() => { setIsAuthenticated(false); setShowPasswordChange(false); setPasswordInput(''); }}
-                      className="px-3 py-1.5 text-xs bg-white/[0.06] border border-white/[0.08] rounded-lg hover:bg-white/[0.1] text-gray-400 hover:text-gray-200 transition-all"
-                    >
-                      Cerrar sesión
-                    </button>
-                  </div>
-
-                  {/* Password change */}
-                  <div>
-                    <button
-                      onClick={() => setShowPasswordChange(!showPasswordChange)}
-                      className="text-sm text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1.5"
-                    >
-                      <svg className={`w-3.5 h-3.5 transition-transform ${showPasswordChange ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                      Cambiar clave de administrador
-                    </button>
-
-                    {showPasswordChange && (
-                      <div className="mt-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                        <div className="relative flex-1 max-w-xs">
-                          <input
-                            type="password"
-                            placeholder="Nueva clave"
-                            className="w-full px-4 py-2 bg-white/[0.06] border border-white/[0.1] rounded-xl text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all"
-                            value={newPasswordInput}
-                            onChange={e => setNewPasswordInput(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter' && newPasswordInput.trim()) {
-                                setAdminPassword(newPasswordInput.trim());
-                                setNewPasswordInput('');
-                                setShowPasswordChange(false);
-                              }
-                            }}
-                          />
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (newPasswordInput.trim()) {
-                              setAdminPassword(newPasswordInput.trim());
-                              setNewPasswordInput('');
-                              setShowPasswordChange(false);
-                            }
-                          }}
-                          className="px-4 py-2 bg-gradient-to-r from-amber-500/80 to-yellow-500/80 text-gray-950 font-medium text-xs rounded-xl hover:from-amber-400 hover:to-yellow-400 transition-all"
-                        >
-                          Guardar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+            {/* Hero / Header */}
+      <header className="mb-6">
+        <div className="text-center">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 bg-clip-text text-transparent">
+            Quiniela Mundial 2026
+          </h1>
+          <p className="text-gray-400 mt-1 text-sm sm:text-base flex items-center gap-2 justify-center">
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-400/60" />
+            {totalPlayed}/{totalGroupMatches} partidos disputados
+            <span className="text-gray-600">·</span>
+            <span className="text-gray-500">{players.length} jugadores</span>
+          </p>
         </div>
       </header>
 
       {/* ── Main Content ── */}
       <main className="max-w-6xl mx-auto px-4 pb-12">
         {/* Results info bar */}
-        {resultsFromAPI && (
+        {false && (
           <div className="mb-6 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex items-center gap-2 text-sm text-emerald-400">
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
