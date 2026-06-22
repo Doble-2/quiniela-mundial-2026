@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ALL_MATCHES } from "@/lib/matches";
 import { ResultsMap } from "@/lib/types";
+import { convertToVET } from "@/lib/utils";
 
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -39,10 +40,54 @@ export default function CalendarioPage() {
   const [results, setResults] = useState<ResultsMap>({});
   const [loading, setLoading] = useState(true);
   const [playerFiles, setPlayerFiles] = useState<string[]>([]);
+  const [matchTimes, setMatchTimes] = useState<Record<string, { time: string; date: string; localTime: string }>>({});
+
+  const TEAM_MAP: Record<string, string> = {
+    "Mexico": "México", "South Africa": "Sudáfrica", "South Korea": "Corea del Sur",
+    "Czech Republic": "República Checa", "Canada": "Canadá", "Bosnia & Herzegovina": "Bosnia y Herzegovina",
+    "Qatar": "Catar", "Switzerland": "Suiza", "Brazil": "Brasil", "Morocco": "Marruecos",
+    "Haiti": "Haití", "Scotland": "Escocia", "USA": "Estados Unidos", "Paraguay": "Paraguay",
+    "Australia": "Australia", "Turkey": "Turquía", "Germany": "Alemania", "Curaçao": "Curazao",
+    "Ivory Coast": "Costa de Marfil", "Ecuador": "Ecuador", "Netherlands": "Países Bajos",
+    "Japan": "Japón", "Sweden": "Suecia", "Tunisia": "Túnez", "Belgium": "Bélgica",
+    "Egypt": "Egipto", "Iran": "Irán", "New Zealand": "Nueva Zelanda", "Spain": "España",
+    "Cape Verde": "Cabo Verde", "Saudi Arabia": "Arabia Saudita", "Uruguay": "Uruguay",
+    "France": "Francia", "Senegal": "Senegal", "Iraq": "Irak", "Norway": "Noruega",
+    "Argentina": "Argentina", "Algeria": "Argelia", "Austria": "Austria", "Jordan": "Jordania",
+    "Portugal": "Portugal", "DR Congo": "RD Congo", "Uzbekistan": "Uzbekistán",
+    "Colombia": "Colombia", "England": "Inglaterra", "Croatia": "Croacia",
+    "Ghana": "Ghana", "Panama": "Panamá"
+  };
 
   useEffect(() => {
     async function load() {
       try {
+        // Fetch match times from openfootball
+        let fetchedTimes: Record<string, { time: string; date: string; localTime: string }> = {};
+        try {
+          const ofResp = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
+          const ofData = await ofResp.json();
+          if (ofData?.matches) {
+            for (const m of ofData.matches) {
+              if (!m.score?.ft) continue;
+              const home = TEAM_MAP[m.team1] || m.team1;
+              const away = TEAM_MAP[m.team2] || m.team2;
+              const matchEntry = ALL_MATCHES.find(x => x.home === home && x.away === away);
+              if (matchEntry) {
+                const vetTime = convertToVET(m.time || '');
+                fetchedTimes[matchEntry.matchId] = {
+                  time: m.time || '',
+                  date: m.date || '',
+                  localTime: vetTime ? `${m.date} ${vetTime} VET` : `${m.date}`
+                };
+              }
+            }
+          }
+        } catch (e) {
+          console.log('Could not fetch match times from openfootball');
+        }
+        setMatchTimes(fetchedTimes);
+
         const [resultsRes] = await Promise.all([
           fetch("/data/imported-results.json")
             .then((r) => r.json())
@@ -198,6 +243,15 @@ export default function CalendarioPage() {
                             {groupLabel}
                           </span>
                         </div>
+
+                        {/* VET time badge */}
+                        {matchTimes[match.matchId] && (
+                          <div className="hidden md:flex shrink-0">
+                            <span className="text-[10px] font-mono text-gray-600 bg-gray-800/60 px-1.5 py-0.5 rounded border border-gray-700/30">
+                              {matchTimes[match.matchId].localTime}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Match info */}
                         <div className="flex-1 flex items-center gap-2 min-w-0">
