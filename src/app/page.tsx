@@ -103,21 +103,74 @@ export default function Home() {
     async function loadData() {
       setLoading(true);
 
-      // Load imported results (real match scores from API)
-      try {
-        const importedRes = await fetch('/data/imported-results.json').then(r => r.json());
-        if (importedRes?.matchResults) {
-          setResults(importedRes.matchResults);
-          // Also save to localStorage so admin additions persist
-          saveAllResults(importedRes);
+      // Load real match results: first try openfootball live JSON, fallback to local file
+      async function fetchResults() {
+        const TEAM_MAP: Record<string, string> = {
+          "Mexico": "México", "South Africa": "Sudáfrica", "South Korea": "Corea del Sur",
+          "Czech Republic": "República Checa", "Canada": "Canadá", "Bosnia & Herzegovina": "Bosnia y Herzegovina",
+          "Qatar": "Catar", "Switzerland": "Suiza", "Brazil": "Brasil", "Morocco": "Marruecos",
+          "Haiti": "Haití", "Scotland": "Escocia", "USA": "Estados Unidos", "Paraguay": "Paraguay",
+          "Australia": "Australia", "Turkey": "Turquía", "Germany": "Alemania", "Curaçao": "Curazao",
+          "Ivory Coast": "Costa de Marfil", "Ecuador": "Ecuador", "Netherlands": "Países Bajos",
+          "Japan": "Japón", "Sweden": "Suecia", "Tunisia": "Túnez", "Belgium": "Bélgica",
+          "Egypt": "Egipto", "Iran": "Irán", "New Zealand": "Nueva Zelanda", "Spain": "España",
+          "Cape Verde": "Cabo Verde", "Saudi Arabia": "Arabia Saudita", "Uruguay": "Uruguay",
+          "France": "Francia", "Senegal": "Senegal", "Iraq": "Irak", "Norway": "Noruega",
+          "Argentina": "Argentina", "Algeria": "Argelia", "Austria": "Austria", "Jordan": "Jordania",
+          "Portugal": "Portugal", "DR Congo": "RD Congo", "Uzbekistan": "Uzbekistán",
+          "Colombia": "Colombia", "England": "Inglaterra", "Croatia": "Croacia",
+          "Ghana": "Ghana", "Panama": "Panamá"
+        };
+
+        try {
+          const resp = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
+          const rawData = await resp.json();
+          const matchResults: ResultsMap = {};
+          
+          if (rawData?.matches) {
+            for (const m of rawData.matches) {
+              if (!m.score?.ft) continue;
+              const home = TEAM_MAP[m.team1] || m.team1;
+              const away = TEAM_MAP[m.team2] || m.team2;
+              // Find match in our schedule by team names
+              const matchEntry = ALL_MATCHES.find(x => x.home === home && x.away === away);
+              if (matchEntry) {
+                matchResults[matchEntry.matchId] = {
+                  homeScore: m.score.ft[0],
+                  awayScore: m.score.ft[1],
+                  played: true
+                };
+              }
+            }
+          }
+
+          if (Object.keys(matchResults).length > 0) {
+            setResults(matchResults);
+            saveAllResults({ matchResults, groupWinners: {}, knockoutResults: {} });
+            return;
+          }
+        } catch (e) {
+          console.log('Could not fetch from openfootball, trying local file');
         }
-      } catch (e) {
-        console.log('No imported results file found, using localStorage');
+
+        // Fallback: try local imported results
+        try {
+          const importedRes = await fetch('/data/imported-results.json').then(r => r.json());
+          if (importedRes?.matchResults) {
+            setResults(importedRes.matchResults);
+            saveAllResults(importedRes);
+            return;
+          }
+        } catch (e) {}
+
+        // Last resort: localStorage
         const saved = getAllResults();
         if (saved.matchResults && Object.keys(saved.matchResults).length > 0) {
           setResults(saved.matchResults);
         }
       }
+
+      await fetchResults();
 
       // Load player data
       const playerFiles = [
