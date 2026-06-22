@@ -1,0 +1,565 @@
+{
+  "nombre": "Juan J",
+  "archivo": "JuanJ-Mundial-2026-8b951b49.xlsx",
+  "predicciones": {
+    "fase_grupos": [
+      {
+        "match_id": "A1",
+        "match": "México-Sudáfrica",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "A1",
+        "match": "Corea del Sur-República Checa",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "B1",
+        "match": "Canadá-Bosnia y Herzegovina",
+        "result": "1",
+        "score": "1-0"
+      },
+      {
+        "match_id": "B1",
+        "match": "Catar-Suiza",
+        "result": "2",
+        "score": "0-1"
+      },
+      {
+        "match_id": "C1",
+        "match": "Brasil-Marruecos",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "C1",
+        "match": "Haití-Escocia",
+        "result": "2",
+        "score": "0-4"
+      },
+      {
+        "match_id": "D1",
+        "match": "Estados Unidos-Paraguay",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "D1",
+        "match": "Australia-Turquía",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "E1",
+        "match": "Alemania-Curazao",
+        "result": "1",
+        "score": "6-0"
+      },
+      {
+        "match_id": "E1",
+        "match": "Costa de Marfil-Ecuador",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "F1",
+        "match": "Países Bajos-Japón",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "F1",
+        "match": "Suecia-Túnez",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "G1",
+        "match": "Bélgica-Egipto",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "G1",
+        "match": "Irán-Nueva Zelanda",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "H1",
+        "match": "España-Cabo Verde",
+        "result": "1",
+        "score": "5-0"
+      },
+      {
+        "match_id": "H1",
+        "match": "Arabia Saudita-Uruguay",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "I1",
+        "match": "Francia-Senegal",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "I1",
+        "match": "Irak-Noruega",
+        "result": "2",
+        "score": "0-2"
+      },
+      {
+        "match_id": "J1",
+        "match": "Argentina-Argelia",
+        "result": "1",
+        "score": "3-0"
+      },
+      {
+        "match_id": "J1",
+        "match": "Austria-Jordania",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "K1",
+        "match": "Portugal-RD Congo",
+        "result": "1",
+        "score": "3-0"
+      },
+      {
+        "match_id": "K1",
+        "match": "Uzbekistán-Colombia",
+        "result": "2",
+        "score": "0-2"
+      },
+      {
+        "match_id": "L1",
+        "match": "Inglaterra-Croacia",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "L1",
+        "match": "Ghana-Panamá",
+        "result": "1",
+        "score": "1-0"
+      },
+      {
+        "match_id": "A2",
+        "match": "República Checa-Sudáfrica",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "A2",
+        "match": "México-Corea del Sur",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "B2",
+        "match": "Suiza-Bosnia y Herzegovina",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "B2",
+        "match": "Canadá-Catar",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "C2",
+        "match": "Escocia-Marruecos",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "C2",
+        "match": "Brasil-Haití",
+        "result": "1",
+        "score": "6-0"
+      },
+      {
+        "match_id": "D2",
+        "match": "Estados Unidos-Australia",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "D2",
+        "match": "Turquía-Paraguay",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "E2",
+        "match": "Alemania-Costa de Marfil",
+        "result": "1",
+        "score": "3-1"
+      },
+      {
+        "match_id": "E2",
+        "match": "Ecuador-Curazao",
+        "result": "1",
+        "score": "4-0"
+      },
+      {
+        "match_id": "F2",
+        "match": "Países Bajos-Suecia",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "F2",
+        "match": "Túnez-Japón",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "G2",
+        "match": "Bélgica-Irán",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "G2",
+        "match": "Nueva Zelanda-Egipto",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "H2",
+        "match": "España-Arabia Saudita",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "H2",
+        "match": "Uruguay-Cabo Verde",
+        "result": "1",
+        "score": "3-0"
+      },
+      {
+        "match_id": "I2",
+        "match": "Francia-Irak",
+        "result": "1",
+        "score": "4-0"
+      },
+      {
+        "match_id": "I2",
+        "match": "Noruega-Senegal",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "J2",
+        "match": "Argentina-Austria",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "J2",
+        "match": "Jordania-Argelia",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "K2",
+        "match": "Portugal-Uzbekistán",
+        "result": "1",
+        "score": "3-1"
+      },
+      {
+        "match_id": "K2",
+        "match": "Colombia-RD Congo",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "L2",
+        "match": "Inglaterra-Ghana",
+        "result": "1",
+        "score": "3-1"
+      },
+      {
+        "match_id": "L2",
+        "match": "Panamá-Croacia",
+        "result": "2",
+        "score": "1-3"
+      },
+      {
+        "match_id": "A3",
+        "match": "República Checa-México",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "A3",
+        "match": "Sudáfrica-Corea del Sur",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "B3",
+        "match": "Suiza-Canadá",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "B3",
+        "match": "Bosnia y Herzegovina-Catar",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "C3",
+        "match": "Escocia-Brasil",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "C3",
+        "match": "Marruecos-Haití",
+        "result": "1",
+        "score": "3-0"
+      },
+      {
+        "match_id": "D3",
+        "match": "Turquía-Estados Unidos",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "D3",
+        "match": "Paraguay-Australia",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "E3",
+        "match": "Curazao-Costa de Marfil",
+        "result": "2",
+        "score": "0-3"
+      },
+      {
+        "match_id": "E3",
+        "match": "Ecuador-Alemania",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "F3",
+        "match": "Japón-Suecia",
+        "result": "1",
+        "score": "2-0"
+      },
+      {
+        "match_id": "F3",
+        "match": "Túnez-Países Bajos",
+        "result": "2",
+        "score": "0-3"
+      },
+      {
+        "match_id": "G3",
+        "match": "Egipto-Irán",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "G3",
+        "match": "Nueva Zelanda-Bélgica",
+        "result": "2",
+        "score": "0-1"
+      },
+      {
+        "match_id": "H3",
+        "match": "Cabo Verde-Arabia Saudita",
+        "result": "2",
+        "score": "0-2"
+      },
+      {
+        "match_id": "H3",
+        "match": "Uruguay-España",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "I3",
+        "match": "Noruega-Francia",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "I3",
+        "match": "Senegal-Irak",
+        "result": "1",
+        "score": "2-1"
+      },
+      {
+        "match_id": "J3",
+        "match": "Argelia-Austria",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "J3",
+        "match": "Jordania-Argentina",
+        "result": "2",
+        "score": "0-4"
+      },
+      {
+        "match_id": "K3",
+        "match": "Colombia-Portugal",
+        "result": "2",
+        "score": "1-2"
+      },
+      {
+        "match_id": "K3",
+        "match": "RD Congo-Uzbekistán",
+        "result": "X",
+        "score": "1-1"
+      },
+      {
+        "match_id": "L3",
+        "match": "Panamá-Inglaterra",
+        "result": "2",
+        "score": "0-4"
+      },
+      {
+        "match_id": "L3",
+        "match": "Croacia-Ghana",
+        "result": "1",
+        "score": "3-1"
+      }
+    ],
+    "ganadores_grupo": [
+      {
+        "group": "A",
+        "winner": "México"
+      },
+      {
+        "group": "B",
+        "winner": "Canadá"
+      },
+      {
+        "group": "C",
+        "winner": "Brasil"
+      },
+      {
+        "group": "D",
+        "winner": "Estados Unidos"
+      },
+      {
+        "group": "E",
+        "winner": "Alemania"
+      },
+      {
+        "group": "F",
+        "winner": "Países Bajos"
+      },
+      {
+        "group": "G",
+        "winner": "Bélgica"
+      },
+      {
+        "group": "H",
+        "winner": "España"
+      },
+      {
+        "group": "I",
+        "winner": "Francia"
+      },
+      {
+        "group": "J",
+        "winner": "Argentina"
+      },
+      {
+        "group": "K",
+        "winner": "Portugal"
+      },
+      {
+        "group": "L",
+        "winner": "Inglaterra"
+      }
+    ],
+    "eliminatorias": [
+      {
+        "stage": "1/16",
+        "match": "Dieciseisavofinalista",
+        "result": "",
+        "qualified": "Sudáfrica"
+      },
+      {
+        "stage": "1/16",
+        "match": "Sudáfrica-Bosnia y Herzegovina",
+        "result": "0|-",
+        "qualified": "Sudáfrica-Bosnia y Herzegovina"
+      },
+      {
+        "stage": "1/8",
+        "match": "Octavofinalista",
+        "result": "",
+        "qualified": "W73"
+      },
+      {
+        "stage": "1/8",
+        "match": "W73-W75",
+        "result": "0|-",
+        "qualified": "W73-W75"
+      },
+      {
+        "stage": "1/4",
+        "match": "Cuartofinalista",
+        "result": "",
+        "qualified": "W89"
+      },
+      {
+        "stage": "1/4",
+        "match": "W89-W90",
+        "result": "0|-",
+        "qualified": "W89-W90"
+      },
+      {
+        "stage": "1/2",
+        "match": "Semifinalista",
+        "result": "",
+        "qualified": "W97"
+      },
+      {
+        "stage": "1/2",
+        "match": "W97-W98",
+        "result": "0|-",
+        "qualified": "W97-W98"
+      },
+      {
+        "stage": "3-4",
+        "match": "3º y 4º puesto",
+        "result": "",
+        "qualified": "L101"
+      },
+      {
+        "stage": "F",
+        "match": "Finalista",
+        "result": "",
+        "qualified": "W101"
+      },
+      {
+        "stage": "3-4",
+        "match": "L101-L102",
+        "result": "0|-",
+        "qualified": "L101-L102"
+      },
+      {
+        "stage": "F",
+        "match": "W101-W102",
+        "result": "0|-",
+        "qualified": "W101-W102"
+      }
+    ]
+  },
+  "total_predicciones": 96
+}
