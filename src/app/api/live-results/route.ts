@@ -20,8 +20,8 @@ const TEAM_MAP: Record<string, string> = {
 export async function GET() {
   try {
     const resp = await fetch(
-      'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json',
-      { next: { revalidate: 60 } } // revalidate every 60 seconds
+      'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json?_t=' + Date.now(),
+      { cache: 'no-store' }
     );
 
     if (!resp.ok) {
@@ -33,7 +33,14 @@ export async function GET() {
     }
 
     const rawData = await resp.json();
-    return NextResponse.json(convertResults(rawData));
+    const result = convertResults(rawData);
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (e) {
     // Final fallback to local file
     try {
