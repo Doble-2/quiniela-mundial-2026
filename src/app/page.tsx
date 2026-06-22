@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { MatchData, Prediction, PlayerData, MatchResult, ResultsMap } from '@/lib/types';
 import { ALL_MATCHES } from '@/lib/matches';
 import { calculatePredictionPoints, getAllResults, saveAllResults } from '@/lib/scoring';
+import { PerformanceChart, CHART_COLORS } from '@/lib/charts';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,67 @@ function getPredictionMatchId(pred: Prediction): string | null {
   const [home, away] = parts;
   const match = ALL_MATCHES.find(m => m.home === home && m.away === away);
   return match ? match.matchId : null;
+}
+
+// ── Per-Matchday Points Calculation ───────────────────────────────────────────
+
+interface MatchdayPoints {
+  matchday: string;
+  points: Record<string, number>;
+}
+
+function calculatePerMatchdayPoints(
+  players: PlayerWithScore[],
+  results: ResultsMap
+): MatchdayPoints[] {
+  // Group matches by round (1, 2, 3 for group stage)
+  const roundLabels: Record<number, string> = {
+    1: 'Jornada 1',
+    2: 'Jornada 2',
+    3: 'Jornada 3',
+  };
+
+  // For each player, calculate points per match
+  const matchPoints: Record<string, Record<string, number>> = {};
+
+  for (const player of players) {
+    matchPoints[player.name] = {};
+    for (const pred of player.predictions) {
+      const matchId = getPredictionMatchId(pred);
+      if (!matchId) continue;
+
+      const match = ALL_MATCHES.find((m) => m.matchId === matchId);
+      if (!match || match.stage !== 'group' || !match.round) continue;
+
+      const roundLabel = roundLabels[match.round] || `Ronda ${match.round}`;
+      const actualResult = results[matchId];
+
+      if (
+        actualResult?.played &&
+        actualResult.homeScore !== null &&
+        actualResult.awayScore !== null &&
+        pred?.score
+      ) {
+        const actualScore = `${actualResult.homeScore}-${actualResult.awayScore}`;
+        const pts = calculatePredictionPoints(pred.score, actualScore);
+        matchPoints[player.name][roundLabel] =
+          (matchPoints[player.name][roundLabel] || 0) + pts;
+      } else {
+        matchPoints[player.name][roundLabel] =
+          matchPoints[player.name][roundLabel] || 0;
+      }
+    }
+  }
+
+  // Build result array in order
+  const roundOrder = ['Jornada 1', 'Jornada 2', 'Jornada 3'];
+  return roundOrder.map((label) => {
+    const values: Record<string, number> = {};
+    for (const player of players) {
+      values[player.name] = matchPoints[player.name]?.[label] ?? 0;
+    }
+    return { matchday: label, points: values };
+  });
 }
 
 function groupPredictions(predictions: Prediction[]): Map<string, Prediction[]> {
@@ -555,7 +617,40 @@ export default function Home() {
           )}
         </section>
 
-                {/* ── Bottom 3 funny messages (dynamic pool of 40+) ── */}
+                {/* ── Global Performance Chart ── */}
+        {!loading && sortedPlayers.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+              <h2 className="text-lg sm:text-xl font-bold text-gray-200 flex items-center gap-2">
+                📈 Rendimiento por jornada
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+            </div>
+            <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-3 md:p-5 backdrop-blur-sm">
+              {(() => {
+                const top5 = sortedPlayers.slice(0, 5);
+                const mdPoints = calculatePerMatchdayPoints(top5, results);
+                const chartData = mdPoints.map((md) => ({
+                  label: md.matchday,
+                  values: md.points,
+                }));
+                return (
+                  <PerformanceChart
+                    data={chartData}
+                    players={top5.map((p) => p.name)}
+                    type="line"
+                    height={250}
+                    width={600}
+                    cumulative={true}
+                  />
+                );
+              })()}
+            </div>
+          </section>
+        )}
+
+        {/* ── Bottom 3 funny messages (dynamic pool of 40+) ── */}
         {!loading && sortedPlayers.length >= 3 && (
           <div className="mt-6 space-y-2 text-center">
             <p className="text-xs text-gray-600 mb-2 text-center">🏆 Mensajes para la cola de la tabla:</p>
@@ -676,6 +771,33 @@ function PlayerDetail({
             <span className="text-gray-400">aciertos</span>
           </div>
         </div>
+
+        {/* Player performance mini chart */}
+        {(() => {
+          const singlePlayerData = calculatePerMatchdayPoints([player], results);
+          const chartData = singlePlayerData.map((md) => ({
+            label: md.matchday,
+            values: md.points,
+          }));
+          return (
+            <div className="mb-4 rounded-xl bg-white/[0.02] border border-white/[0.05] p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                  Rendimiento
+                </span>
+                <div className="h-px flex-1 bg-gradient-to-r from-white/5 to-transparent" />
+              </div>
+              <PerformanceChart
+                data={chartData}
+                players={[player.name]}
+                type="bar"
+                height={140}
+                width={400}
+                cumulative={false}
+              />
+            </div>
+          );
+        })()}
 
         {/* Predictions grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
