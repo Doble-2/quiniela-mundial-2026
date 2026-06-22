@@ -216,34 +216,59 @@ function PositionSparkline({ positions }: { positions: number[] }) {
   );
 }
 
-function calculatePositionTrends(mdPoints: { matchday: string; points: Record<string, number> }[], sortedPlayers: PlayerWithScore[]): Record<string, number[]> {
+function calculatePositionTrends(
+  results: ResultsMap,
+  sortedPlayers: PlayerWithScore[]
+): Record<string, number[]> {
   const trends: Record<string, number[]> = {};
-  
   for (const player of sortedPlayers) {
     trends[player.name] = [];
   }
   
-  // For each matchday, compute rankings
-  for (let mi = 0; mi < mdPoints.length; mi++) {
-    const md = mdPoints[mi];
-    // Build cumulative points up to this matchday
-    const cumulative: Record<string, number> = {};
+  // Get played matches sorted chronologically by match date
+  const playedMatches = ALL_MATCHES
+    .filter(m => m.stage === 'group' && results[m.matchId]?.played)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  
+  if (playedMatches.length < 2) return trends;
+  
+  // For each player, pre-compute points per matchId for quick lookup
+  const playerPoints: Record<string, Record<string, number>> = {};
+  for (const player of sortedPlayers) {
+    playerPoints[player.name] = {};
+    for (const pred of player.predictions) {
+      const matchId = getPredictionMatchId(pred);
+      if (!matchId) continue;
+      const r = results[matchId];
+      if (!r?.played || !pred?.score) continue;
+      const actualScore = `${r.homeScore}-${r.awayScore}`;
+      playerPoints[player.name][matchId] = calculatePredictionPoints(pred.score, actualScore);
+    }
+  }
+  
+  // After each match, compute cumulative positions
+  const cumulative: Record<string, number> = {};
+  for (const player of sortedPlayers) {
+    cumulative[player.name] = 0;
+  }
+  
+  for (let mi = 0; mi < playedMatches.length; mi++) {
+    const matchId = playedMatches[mi].matchId;
+    
+    // Add points for this match
     for (const player of sortedPlayers) {
-      let total = 0;
-      for (let j = 0; j <= mi; j++) {
-        total += mdPoints[j].points[player.name] || 0;
-      }
-      cumulative[player.name] = total;
+      cumulative[player.name] += playerPoints[player.name]?.[matchId] || 0;
     }
     
-    // Sort by cumulative points
-    const ranked = [...sortedPlayers].sort((a, b) => (cumulative[b.name] || 0) - (cumulative[a.name] || 0));
-    
-    // Assign positions (0-indexed)
-    for (let ri = 0; ri < ranked.length; ri++) {
-      const name = ranked[ri].name;
-      if (!trends[name]) trends[name] = [];
-      trends[name].push(ri);
+    // Compute rankings at this point
+    // Only record every 5th match + first + last to keep sparkline readable
+    if (mi === 0 || mi === playedMatches.length - 1 || mi % 5 === 0) {
+      const ranked = [...sortedPlayers].sort((a, b) => (cumulative[b.name] || 0) - (cumulative[a.name] || 0));
+      for (let ri = 0; ri < ranked.length; ri++) {
+        const name = ranked[ri].name;
+        if (!trends[name]) trends[name] = [];
+        trends[name].push(ri);
+      }
     }
   }
   
@@ -344,11 +369,10 @@ export default function Home() {
   const totalPlayed = Object.values(results).filter(r => r.played).length;
   const totalGroupMatches = ALL_MATCHES.filter(m => m.stage === 'group').length;
 
-  // Calculate position trends per matchday for sparklines
+  // Calculate position trends per match for sparklines
   const positionTrends = useMemo(() => {
     if (players.length === 0 || Object.keys(results).length === 0) return {};
-    const mdPoints = calculatePerMatchdayPoints(sortedPlayers, results);
-    return calculatePositionTrends(mdPoints, sortedPlayers);
+    return calculatePositionTrends(results, sortedPlayers);
   }, [players, results, sortedPlayers]);
 
   // ── Render ───────────────────────────────────────────────────────────────────
