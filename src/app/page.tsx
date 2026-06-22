@@ -7,7 +7,7 @@ import { ALL_MATCHES } from '@/lib/matches';
 import { calculatePredictionPoints, getAllResults, saveAllResults } from '@/lib/scoring';
 import { PerformanceChart, CHART_COLORS } from '@/lib/charts';
 import { PLAYER_SLUG_MAP } from '@/lib/utils';
-import { PositionSparkline, calculatePositionTrends, getPredictionMatchId, PlayerWithScore } from '@/lib/position-trends';
+import { PositionSparkline, calculatePositionTrends, getPredictionMatchId, PlayerWithScore, PositionRaceChart } from '@/lib/position-trends';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -519,6 +519,29 @@ export default function Home() {
                   />
                 );
               })()}
+            </div>
+          </section>
+        )}
+
+        {/* ── Position Race Chart ── */}
+        {!loading && positionTrends && Object.keys(positionTrends).length > 1 && (
+          <section className="mt-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+              <h2 className="text-lg sm:text-xl font-bold text-gray-200 flex items-center gap-2">
+                🏁 Carrera de posiciones
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+            </div>
+            <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-3 md:p-5 backdrop-blur-sm">
+              <p className="text-xs text-gray-500 mb-2">
+                Cada línea muestra cómo cambió la posición de un jugador partido a partido. Arriba = mejor puesto.
+              </p>
+              <PositionRaceChart
+                trends={positionTrends}
+                playerNames={sortedPlayers.map(p => p.name)}
+                height={400}
+              />
             </div>
           </section>
         )}
