@@ -100,31 +100,48 @@ export default function Home() {
   const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
-    // Load saved results
-    const saved = getAllResults();
-    setResults(saved.matchResults);
-    setLoading(true);
+    async function loadData() {
+      setLoading(true);
 
-    // Load player data
-    const playerFiles = [
-      'alejandro', 'alexander', 'alexandito', 'ana_maria_mogollom',
-      'angel', 'daniel', 'daniela', 'dayana',
-      'edixon', 'gerardo', 'jenny', 'jose_d',
-      'josu', 'juan_j', 'melquis', 'oscar_caceres',
-      'smith', 'wilian_alexa', 'zhaid'
-    ];
+      // Load imported results (real match scores from API)
+      try {
+        const importedRes = await fetch('/data/imported-results.json').then(r => r.json());
+        if (importedRes?.matchResults) {
+          setResults(importedRes.matchResults);
+          // Also save to localStorage so admin additions persist
+          saveAllResults(importedRes);
+        }
+      } catch (e) {
+        console.log('No imported results file found, using localStorage');
+        const saved = getAllResults();
+        if (saved.matchResults && Object.keys(saved.matchResults).length > 0) {
+          setResults(saved.matchResults);
+        }
+      }
 
-    Promise.all(
-      playerFiles.map(name =>
-        fetch(`/data/${name}.json`).then(r => r.json() as Promise<PlayerData>)
-      )
-    ).then(data => {
-      setPlayers(data);
+      // Load player data
+      const playerFiles = [
+        'alejandro', 'alexander', 'alexandito', 'ana_maria_mogollom',
+        'angel', 'daniel', 'daniela', 'dayana',
+        'edixon', 'gerardo', 'jenny', 'jose_d',
+        'josu', 'juan_j', 'melquis', 'oscar_caceres',
+        'smith', 'wilian_alexa', 'zhaid'
+      ];
+
+      try {
+        const data = await Promise.all(
+          playerFiles.map(name =>
+            fetch(`/data/${name}.json`).then(r => r.json() as Promise<PlayerData>)
+          )
+        );
+        setPlayers(data);
+      } catch (err) {
+        console.error('Error loading player data:', err);
+      }
       setLoading(false);
-    }).catch(err => {
-      console.error('Error loading player data:', err);
-      setLoading(false);
-    });
+    }
+
+    loadData();
   }, []);
 
   const handleResultChange = useCallback((matchId: string, field: 'homeScore' | 'awayScore', value: string) => {
